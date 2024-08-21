@@ -29,4 +29,41 @@ document.addEventListener('DOMContentLoaded', function() {
             purchaseModal.classList.add('hidden');
         }
     });
+
+    // Stripe integration
+    const stripe = Stripe('your_stripe_public_key');
+    const purchaseForm = document.querySelector('#purchase form');
+
+    purchaseForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+
+        // Collect form data
+        const formData = new FormData(purchaseForm);
+        const paymentMethod = await stripe.createPaymentMethod({
+            type: 'card',
+            card: {
+                number: formData.get('card_number'),
+                exp_month: formData.get('exp_month'),
+                exp_year: formData.get('exp_year'),
+                cvc: formData.get('cvc')
+            }
+        });
+
+        // Process the payment
+        try {
+            const response = await stripe.confirmCardPayment('your_stripe_client_secret', {
+                payment_method: paymentMethod.paymentMethod.id
+            });
+
+            if (response.paymentIntent.status === 'succeeded') {
+                // Payment successful
+                console.log('Payment successful!');
+            } else {
+                // Payment failed
+                console.error('Payment failed:', response.error.message);
+            }
+        } catch (error) {
+            console.error('Error processing payment:', error);
+        }
+    });
 });
